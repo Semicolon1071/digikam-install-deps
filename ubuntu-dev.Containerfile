@@ -24,7 +24,11 @@ ARG DK_KA_VERSION=v25.12.1
 FROM ubuntu:${UBUNTU_VERSION} AS base
 
 # Prevent apt from prompting for user input (timezone, keyboard layout, etc.)
-ENV DEBIAN_FRONTEND=noninteractive
+# Set a UTF-8 locale to silence warnings from CMake, Perl, and other tools
+# that do not support the default C/ANSI_X3.4-1968 encoding.
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     # --- Core build tools ---------------------------------------------------
@@ -194,25 +198,25 @@ RUN --mount=type=cache,target=/digikam-install-deps/download.qt6 \
     # --- Phase 1: build CMake using the system cmake ------------------------
     cd "$BUILDING_DIR" && \
     cmake "$ORIG_WD/3rdparty" \
-        -DCMAKE_INSTALL_PREFIX:PATH="$INSTALL_DIR" \
-        -DEXTERNALS_DOWNLOAD_DIR="$DOWNLOAD_DIR" \
-        -DINSTALL_ROOT="$INSTALL_DIR" \
-        -DKA_VERSION="$DK_KA_VERSION" \
-        -DKP_VERSION="$DK_KP_VERSION" \
-        -DKDE_VERSION="$DK_KDE_VERSION" \
-        -Wno-dev && \
+    -DCMAKE_INSTALL_PREFIX:PATH="$INSTALL_DIR" \
+    -DEXTERNALS_DOWNLOAD_DIR="$DOWNLOAD_DIR" \
+    -DINSTALL_ROOT="$INSTALL_DIR" \
+    -DKA_VERSION="$DK_KA_VERSION" \
+    -DKP_VERSION="$DK_KP_VERSION" \
+    -DKDE_VERSION="$DK_KDE_VERSION" \
+    -Wno-dev && \
     cmake --build . --config RelWithDebInfo --target ext_cmake -- -j"$CPU_CORES" && \
     # --- Phase 2: reconfigure with the newly-built cmake, then build --------
     #     Jasper and OpenSSL
     rm -rf "$BUILDING_DIR"/* && \
     "$INSTALL_DIR/bin/cmake" "$ORIG_WD/3rdparty" \
-        -DCMAKE_INSTALL_PREFIX:PATH="$INSTALL_DIR" \
-        -DEXTERNALS_DOWNLOAD_DIR="$DOWNLOAD_DIR" \
-        -DINSTALL_ROOT="$INSTALL_DIR" \
-        -DKA_VERSION="$DK_KA_VERSION" \
-        -DKP_VERSION="$DK_KP_VERSION" \
-        -DKDE_VERSION="$DK_KDE_VERSION" \
-        -Wno-dev && \
+    -DCMAKE_INSTALL_PREFIX:PATH="$INSTALL_DIR" \
+    -DEXTERNALS_DOWNLOAD_DIR="$DOWNLOAD_DIR" \
+    -DINSTALL_ROOT="$INSTALL_DIR" \
+    -DKA_VERSION="$DK_KA_VERSION" \
+    -DKP_VERSION="$DK_KP_VERSION" \
+    -DKDE_VERSION="$DK_KDE_VERSION" \
+    -Wno-dev && \
     "$INSTALL_DIR/bin/cmake" --build . --config RelWithDebInfo --target ext_jasper  -- -j"$CPU_CORES" && \
     "$INSTALL_DIR/bin/cmake" --build . --config RelWithDebInfo --target ext_openssl -- -j"$CPU_CORES"
 
@@ -236,8 +240,8 @@ RUN --mount=type=cache,target=/digikam-install-deps/download.qt6 \
     echo "Building Qt6 with $QT_CORES parallel jobs ($PHY_MEM GB RAM detected)" && \
     cd "$BUILDING_DIR" && \
     taskset -c "0-$((QT_CORES - 1))" \
-        "$INSTALL_DIR/bin/cmake" --build . --parallel "$QT_CORES" \
-            --config RelWithDebInfo --target ext_qt6
+    "$INSTALL_DIR/bin/cmake" --build . --parallel "$QT_CORES" \
+    --config RelWithDebInfo --target ext_qt6
 
 
 # ===========================================================================
@@ -287,58 +291,58 @@ RUN --mount=type=cache,target=/digikam-install-deps/download.qt6 \
     cd "$BUILDING_DIR" && \
     rm -rf "$BUILDING_DIR"/* && \
     cmake "$ORIG_WD/3rdparty" \
-        -DCMAKE_INSTALL_PREFIX:PATH="$INSTALL_DIR" \
-        -DINSTALL_ROOT="$INSTALL_DIR" \
-        -DEXTERNALS_DOWNLOAD_DIR="$DOWNLOAD_DIR" \
-        -DEXTERNALS_BUILD_DIR="$BUILDING_DIR" \
-        -DKA_VERSION="$DK_KA_VERSION" \
-        -DKP_VERSION="$DK_KP_VERSION" \
-        -DKDE_VERSION="$DK_KDE_VERSION" \
-        -Wno-dev && \
+    -DCMAKE_INSTALL_PREFIX:PATH="$INSTALL_DIR" \
+    -DINSTALL_ROOT="$INSTALL_DIR" \
+    -DEXTERNALS_DOWNLOAD_DIR="$DOWNLOAD_DIR" \
+    -DEXTERNALS_BUILD_DIR="$BUILDING_DIR" \
+    -DKA_VERSION="$DK_KA_VERSION" \
+    -DKP_VERSION="$DK_KP_VERSION" \
+    -DKDE_VERSION="$DK_KDE_VERSION" \
+    -Wno-dev && \
     # --- KDE Framework components in dependency order -----------------------
     # The order mirrors FRAMEWORK_COMPONENTS in config.sh. Each component
     # may depend on one or more of the components listed above it.
     for component in \
-        ext_extra-cmake-modules \
-        ext_kconfig \
-        ext_breeze-icons \
-        ext_kcoreaddons \
-        ext_kwindowsystem \
-        ext_solid \
-        ext_threadweaver \
-        ext_karchive \
-        ext_kdbusaddons \
-        ext_ki18n \
-        ext_kcrash \
-        ext_kcodecs \
-        ext_kauth \
-        ext_kguiaddons \
-        ext_kwidgetsaddons \
-        ext_kitemviews \
-        ext_kcompletion \
-        ext_kcolorscheme \
-        ext_kconfigwidgets \
-        ext_kiconthemes \
-        ext_kservice \
-        ext_kglobalaccel \
-        ext_kxmlgui \
-        ext_kbookmarks \
-        ext_kimageformats \
-        ext_plasma-wayland-protocols \
-        ext_knotifications \
-        ext_kjobwidgets \
-        ext_kio \
-        ext_knotifyconfig \
-        ext_sonnet \
-        ext_ktextwidgets \
-        ext_qca \
-        ext_kwallet \
-        ext_ksanecore \
-        ext_libksane \
-        ext_kcalendarcore \
+    ext_extra-cmake-modules \
+    ext_kconfig \
+    ext_breeze-icons \
+    ext_kcoreaddons \
+    ext_kwindowsystem \
+    ext_solid \
+    ext_threadweaver \
+    ext_karchive \
+    ext_kdbusaddons \
+    ext_ki18n \
+    ext_kcrash \
+    ext_kcodecs \
+    ext_kauth \
+    ext_kguiaddons \
+    ext_kwidgetsaddons \
+    ext_kitemviews \
+    ext_kcompletion \
+    ext_kcolorscheme \
+    ext_kconfigwidgets \
+    ext_kiconthemes \
+    ext_kservice \
+    ext_kglobalaccel \
+    ext_kxmlgui \
+    ext_kbookmarks \
+    ext_kimageformats \
+    ext_plasma-wayland-protocols \
+    ext_knotifications \
+    ext_kjobwidgets \
+    ext_kio \
+    ext_knotifyconfig \
+    ext_sonnet \
+    ext_ktextwidgets \
+    ext_qca \
+    ext_kwallet \
+    ext_ksanecore \
+    ext_libksane \
+    ext_kcalendarcore \
     ; do \
-        echo "========== Building $component ==========" && \
-        cmake --build . --config RelWithDebInfo --target "$component" -- -j"$CPU_CORES" ; \
+    echo "========== Building $component ==========" && \
+    cmake --build . --config RelWithDebInfo --target "$component" -- -j"$CPU_CORES" ; \
     done && \
     # Discard build artifacts to save space
     rm -rf "$BUILDING_DIR"/*
