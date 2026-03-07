@@ -357,18 +357,57 @@ RUN --mount=type=cache,target=/digikam-install-deps/download.qt6 \
 # ===========================================================================
 FROM base AS builder
 
+ARG DIGIKAM_VERSION=v9.0.0
+
 # Copy only the installed libraries and tools — no build dirs, no downloads
 COPY --from=kf6-built /opt/qt6 /opt/qt6
 
-# Make the custom-built tools and libraries visible to CMake and the linker
+# Point tools and linker at the custom-built Qt6/KF6 stack.
+# Qt6_DIR and exiv2_DIR/OpenCV_DIR tell CMake where to find their configs.
 ENV PATH="/opt/qt6/bin:${PATH}" \
     CMAKE_PREFIX_PATH="/opt/qt6" \
-    LD_LIBRARY_PATH="/opt/qt6/lib:/opt/qt6/lib64"
+    LD_LIBRARY_PATH="/opt/qt6/lib:/opt/qt6/lib64" \
+    Qt6_DIR="/opt/qt6" \
+    exiv2_DIR="/opt/qt6/lib/cmake" \
+    OpenCV_DIR="/opt/qt6/lib/cmake"
 
 WORKDIR /digikam
 
-# To build digiKam, uncomment the following:
-RUN git clone --branch v9.0.0 --depth 1 https://invent.kde.org/graphics/digikam.git .
+RUN git clone --branch ${DIGIKAM_VERSION} --depth 1 \
+    https://invent.kde.org/graphics/digikam.git .
+
+# Configure digiKam with CMake using Ninja (faster than Make).
+# This is the inlined equivalent of bootstrap.linux with BUILD_WITH_QT6=1,
+# stripped of Qt5 fallback logic, Eclipse support, and ARCH detection.
+#
+# Key flags:
+#   -DBUILD_WITH_QT6=ON            — build against Qt6 (not Qt5)
+#   -DBUILD_WITH_CCACHE=ON         — speed up recompilation with ccache
+#   -DENABLE_INTERNALMYSQL=ON      — use embedded MySQL for photo database
+#   -DENABLE_KFILEMETADATASUPPORT  — index photo metadata via KDE frameworks
+#   -DENABLE_GEOLOCATION=ON        — GPS/map support for geotagged photos
+#   -DENABLE_MEDIAPLAYER=ON        — video playback in the lightbox
+#   -DDIGIKAMSC_COMPILE_PO=OFF     — skip translations (faster build)
 RUN mkdir build && cd build && \
-    /opt/qt6/bin/cmake .. -DCMAKE_INSTALL_PREFIX=/opt/qt6 && \
-    make -j$(nproc)
+    /opt/qt6/bin/cmake -G Ninja .. \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+        -DKDE_INSTALL_QTPLUGINDIR=$(/opt/qt6/bin/qtpaths6 --plugin-dir) \
+        -DBUILD_TESTING=ON \
+        -DBUILD_WITH_CCACHE=ON \
+        -DBUILD_WITH_QT6=ON \
+        -DDIGIKAMSC_COMPILE_PO=OFF \
+        -DDIGIKAMSC_COMPILE_DIGIKAM=ON \
+        -DENABLE_KFILEMETADATASUPPORT=ON \
+        -DENABLE_AKONADICONTACTSUPPORT=ON \
+        -DENABLE_MYSQLSUPPORT=ON \
+        -DENABLE_INTERNALMYSQL=ON \
+        -DENABLE_GEOLOCATION=ON \
+        -DENABLE_MEDIAPLAYER=ON \
+        -DENABLE_DBUS=ON \
+        -DENABLE_APPSTYLES=ON \
+        -DENABLE_SANITIZERS=OFF
+
+# Build digiKam using all available cores
+RUN cd build && ninja -j$(nproc)
