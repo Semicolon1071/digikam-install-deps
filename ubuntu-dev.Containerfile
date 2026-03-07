@@ -60,6 +60,19 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     # --- Python (needed by Qt6 and KF6 build systems) -----------------------
     python3 \
     python3-lxml \
+    python3-html5lib \
+    # --- QtWebEngine build dependencies (embeds Chromium) -------------------
+    # Without these, Qt's configure silently skips qtwebengine, but digiKam
+    # unconditionally requires Qt6::WebEngineWidgets.
+    libevent-dev \
+    libre2-dev \
+    libminizip-dev \
+    libsnappy-dev \
+    libopus-dev \
+    libvpx-dev \
+    libwebp-dev \
+    libjsoncpp-dev \
+    libxslt1-dev \
     # --- Core C/C++ development libraries -----------------------------------
     libpthread-stubs0-dev \
     libc6-dev \
