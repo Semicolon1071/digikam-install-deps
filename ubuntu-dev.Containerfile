@@ -368,7 +368,7 @@ ENV PATH="/opt/qt6/bin:${PATH}" \
 WORKDIR /digikam
 
 # To build digiKam, uncomment the following:
-# RUN git clone --branch v9.0.0 --depth 1 https://invent.kde.org/graphics/digikam.git .
-# RUN mkdir build && cd build && \
-#     /opt/qt6/bin/cmake .. -DCMAKE_INSTALL_PREFIX=/opt/qt6 && \
-#     make -j$(nproc)
+RUN git clone --branch v9.0.0 --depth 1 https://invent.kde.org/graphics/digikam.git .
+RUN mkdir build && cd build && \
+    /opt/qt6/bin/cmake .. -DCMAKE_INSTALL_PREFIX=/opt/qt6 && \
+    make -j$(nproc)
