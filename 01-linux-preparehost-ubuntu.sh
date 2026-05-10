@@ -189,6 +189,7 @@ optional_packages=("ccache"                             # For compiling
                    "libglib2.0-dev"
                    "libusb-1.0-0-dev"
                    "libwayland-dev"
+                   "wayland-protocols"
                    "libsm-dev"
                    "freeglut3-dev"
                    "libinput-dev"
